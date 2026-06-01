@@ -6,6 +6,7 @@ const { registerSchema, loginSchema } = require("./auth.validation");
 
 const register = asyncHandler(async (req, res) => {
   const { error, value } = registerSchema.validate(req.body, {
+    stripUnknown: true,
     abortEarly: false,
   });
   if (error) {
@@ -37,6 +38,7 @@ const register = asyncHandler(async (req, res) => {
 
 const login = asyncHandler(async (req, res) => {
   const { error, value } = loginSchema.validate(req.body, {
+    stripUnknown: true,
     abortEarly: false,
   });
   if (error) {

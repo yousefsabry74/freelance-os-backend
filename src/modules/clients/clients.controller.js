@@ -7,6 +7,7 @@ const {
 
 const createClient = asyncHandler(async (req, res) => {
   const { error, value } = createClientSchema.validate(req.body, {
+    stripUnknown: true,
     abortEarly: false,
   });
   if (error) {
@@ -58,6 +59,7 @@ const getClientById = asyncHandler(async (req, res) => {
 
 const updateClient = asyncHandler(async (req, res) => {
   const { error, value } = updateClientSchema.validate(req.body, {
+    stripUnknown: true,
     abortEarly: false,
   });
   if (error) {

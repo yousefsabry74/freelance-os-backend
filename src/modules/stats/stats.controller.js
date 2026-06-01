@@ -55,17 +55,105 @@ const getOverview = asyncHandler(async (req, res) => {
 });
 
 const getMonthly = asyncHandler(async (req, res) => {
-  // TODO: تقرير شهري كامل
-  // Hint: استخدم aggregate مع $group حسب الشهر والسنة
-  // اجمع الأرباح والمصاريف لكل شهر
+  const userId = req.user.id;
+  const earning = await Earning.aggregate([
+    { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+    {
+      $group: {
+        _id: { year: { $year: "$paidAt" }, month: { $month: "$paidAt" } },
+        total: { $sum: "$amount" },
+      },
+    },
+  ]);
+  const expense = await Expense.aggregate([
+    { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+    {
+      $group: {
+        _id: { year: { $year: "$date" }, month: { $month: "$date" } },
+        total: { $sum: "$amount" },
+      },
+    },
+  ]);
+  const totalEarning = earning.reduce((acc, curr) => {
+    const date = String(curr._id.year) + "-" + String(curr._id.month);
+    if (!acc[date]) {
+      acc[date] = curr.total;
+    }
+    return acc;
+  }, {});
+  const totalExpense = expense.reduce((acc, curr) => {
+    const date = String(curr._id.year) + "-" + String(curr._id.month);
+    if (!acc[date]) {
+      acc[date] = curr.total;
+    }
+    return acc;
+  }, {});
+  res.status(200).json({
+    status: "success",
+    data: { totalEarning: totalEarning, totalExpense: totalExpense },
+  });
 });
 
 const getClientStats = asyncHandler(async (req, res) => {
-  // TODO: إحصائيات عميل معين
-  // 1. بيانات العميل: Client.findOne({ _id: req.params.id, userId })
-  // 2. عدد المشاريع: Project.countDocuments({ clientId, userId })
-  // 3. المشاريع حسب الـ status: Project.aggregate(...)
-  // 4. إجمالي الأرباح من المشاريع بتاعته: Earning.aggregate(...)
+  const userId = req.user.id;
+  const clientId = req.params.id;
+  const [client, totalPorjects, totalPorjectsPerStatus, clientProjects] =
+    await Promise.all([
+      Client.findOne({ userId, _id: clientId }),
+      Project.aggregate([
+        {
+          $match: {
+            userId: new mongoose.Types.ObjectId(userId),
+            clientId: new mongoose.Types.ObjectId(clientId),
+          },
+        },
+        {
+          $group: { _id: null, amount: { $sum: 1 } },
+        },
+      ]),
+      Project.aggregate([
+        {
+          $match: {
+            userId: new mongoose.Types.ObjectId(userId),
+            clientId: new mongoose.Types.ObjectId(clientId),
+          },
+        },
+        { $group: { _id: "$status", amount: { $sum: 1 } } },
+      ]),
+      Project.find({ userId, clientId }, { _id: 1 }),
+    ]);
+
+  if (!client) {
+    return res.status(404).json({
+      status: "error",
+      message: "cannot find this client",
+    });
+  }
+
+  const projectIds = clientProjects.map((p) => p._id);
+  const totalEarnings = await Earning.aggregate([
+    {
+      $match: {
+        userId: new mongoose.Types.ObjectId(userId),
+        projectId: { $in: projectIds },
+      },
+    },
+    { $group: { _id: null, total: { $sum: "$amount" } } },
+  ]);
+
+  const totalProjects = totalPorjects[0]?.amount || 0;
+  const earnings = totalEarnings[0]?.total || 0;
+  res.status(200).json({
+    status: "success",
+    data: {
+      client: client,
+      projects: {
+        total: totalProjects,
+        byStatus: totalPorjectsPerStatus,
+      },
+      earnings: { total: earnings },
+    },
+  });
 });
 
 module.exports = { getOverview, getMonthly, getClientStats };

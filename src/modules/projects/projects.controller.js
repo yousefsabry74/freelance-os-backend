@@ -8,6 +8,7 @@ const {
 const createProject = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const { error, value } = createProjectSchema.validate(req.body, {
+    stripUnknown: true,
     abortEarly: false,
   });
   if (error) {
@@ -68,6 +69,7 @@ const getProjectById = asyncHandler(async (req, res) => {
 
 const updateProject = asyncHandler(async (req, res) => {
   const { error, value } = updateProjectSchema.validate(req.body, {
+    stripUnknown: true,
     abortEarly: false,
   });
   if (error) {
@@ -106,7 +108,6 @@ const deleteProject = asyncHandler(async (req, res) => {
   res
     .status(200)
     .json({ status: "success", message: "project have been deleted" });
-
 });
 
 module.exports = {

@@ -9,6 +9,7 @@ const mongoose = require("mongoose");
 const createExpense = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const { error, value } = createExpenseSchema.validate(req.body, {
+    stripUnknown: true,
     abortEarly: false,
   });
   if (error) {
@@ -67,6 +68,7 @@ const updateExpense = asyncHandler(async (req, res) => {
   }
 
   const { error, value } = updateExpenseSchema.validate(req.body, {
+    stripUnknown: true,
     abortEarly: false,
   });
   if (error) {

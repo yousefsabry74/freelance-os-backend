@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const createEarning = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const { error, value } = createEarningSchema.validate(req.body, {
+    stripUnknown: true,
     abortEarly: false,
   });
   if (error) {
