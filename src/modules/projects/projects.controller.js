@@ -78,6 +78,12 @@ const updateProject = asyncHandler(async (req, res) => {
       message: error.details.map((err) => err.message),
     });
   }
+  if (Object.keys(value).length === 0) {
+    return res.status(400).json({
+      status: "error",
+      message: "No fields provided to update",
+    });
+  }
   const userId = req.user.id;
   const projectId = req.params.id;
   const project = await Project.findOneAndUpdate(

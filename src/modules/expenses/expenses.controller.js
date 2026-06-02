@@ -77,6 +77,12 @@ const updateExpense = asyncHandler(async (req, res) => {
       message: error.details.map((err) => err.message),
     });
   }
+  if (Object.keys(value).length === 0) {
+    return res.status(400).json({
+      status: "error",
+      message: "No fields provided to update",
+    });
+  }
   const expense = await Expense.findOneAndUpdate(
     { userId, _id: expenseId },
     value,
